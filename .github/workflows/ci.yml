@@ -23,10 +23,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # PHASE 1: Quality Gate (First Priority)
+      # PHASE 1: Quality Gate (Must pass before Nexus)
       - name: SonarQube Analysis
         run: |
-          & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify sonar:sonar -Dsonar.login="${{ env.SONAR_TOKEN }}" -Dsonar.host.url="http://localhost:9000" -DskipTests -U
+          & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify sonar:sonar "-Dsonar.login=${{ env.SONAR_TOKEN }}" "-Dsonar.host.url=http://localhost:9000" "-DskipTests" "-U"
 
       # PHASE 2: Artifact Storage (Only if Phase 1 passes)
       - name: Upload to Nexus
