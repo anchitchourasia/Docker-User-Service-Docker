@@ -43,6 +43,7 @@ public class UserController {
             new User(109L, "Gaurav", "gaurav@example.com")
     ));
 
+
     // ✅ Get all users
     @GetMapping
     @Cacheable(value = "users")
