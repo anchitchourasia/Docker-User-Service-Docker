@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted  # Targets your local PC runner
+    runs-on: self-hosted
 
     steps:
       - name: Checkout Code
@@ -16,15 +16,13 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'oracle' # Matching your 'Oracle Corporation' runtime
+          distribution: 'oracle'
           cache: maven
 
       - name: Build with Maven
-        # Using the absolute path to your global Maven installation
-        run: |
-          & "C:\Users\heg\.m2\wrapper\dists\apache-maven-3.9.12\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\bin\mvn.cmd" clean package -DskipTests
+        # Uses the wrapper you just restored to build the .war
+        run: ./mvnw clean package -DskipTests
 
       - name: Deploy to Native Nexus
-        # Pushes your demo.war (0.0.1-SNAPSHOT) to Nexus at localhost:8081
-        run: |
-          & "C:\Users\heg\.m2\wrapper\dists\apache-maven-3.9.12\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\bin\mvn.cmd" deploy -DskipTests
+        # Uses the wrapper to push to your Native Nexus at localhost:8081
+        run: ./mvnw deploy -DskipTests
