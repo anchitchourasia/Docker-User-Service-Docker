@@ -9,11 +9,13 @@ jobs:
     runs-on: self-hosted
 
     env:
+      # Verified public path for Maven connectivity
       MAVEN_BIN: 'C:\maven\apache-maven-3.9.12\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\bin\mvn.cmd'
       SETTINGS_XML: 'C:\maven\settings.xml'
       JAVA_HOME: 'C:\Program Files\Java\jdk-17'
       SONAR_TOKEN: 'sqa_b77a0c65feff9e8f0bcd782da843b9dfe8d7c640'
       IMAGE_NAME: 'user-service-app'
+      # Proxy configuration for network access
       HTTP_PROXY: 'http://192.168.9.112:808'
       HTTPS_PROXY: 'http://192.168.9.112:808'
 
@@ -21,15 +23,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # PHASE 1: Quality Gate (Must come first)
+      # PHASE 1: Quality Gate (First Priority)
       - name: SonarQube Analysis
         run: |
-          & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify sonar:sonar `
-          -Dsonar.login="${{ env.SONAR_TOKEN }}" `
-          -Dsonar.host.url="http://localhost:9000" `
-          -DskipTests -U
+          & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify sonar:sonar -Dsonar.login="${{ env.SONAR_TOKEN }}" -Dsonar.host.url="http://localhost:9000" -DskipTests -U
 
-      # PHASE 2: Artifact Storage (Only runs if SonarQube succeeds)
+      # PHASE 2: Artifact Storage (Only if Phase 1 passes)
       - name: Upload to Nexus
         run: |
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" deploy -DskipTests -U
@@ -39,7 +38,7 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }} .
 
-      # PHASE 4: Deployment
+      # PHASE 4: Professional Deployment
       - name: Ansible Deployment (via WSL)
         run: |
           wsl -d Ubuntu bash -lc "ansible-playbook -i ~/ansible-project/inventory.ini ~/ansible-project/deploy_java_app.yml"
