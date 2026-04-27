@@ -6,21 +6,17 @@ import org.junit.jupiter.api.Test;
 import com.heg.entity.User;
 import java.util.List;
 
-public class UserControllerTest {
+// Issue 1 Fixed: Removed 'public' from class
+class UserControllerTest {
 
-    // 1. Create the controller instance
     private final UserController userController = new UserController();
 
     @Test
-    public void testGetUsersCoverage() {
-        // 2. CRITICAL: Calling this method forces the JVM to execute 
-        // the hardcoded list declaration in UserController.java
+    // Issue 2 Fixed: Removed 'public' from method
+    void testGetUsersCoverage() {
         List<User> result = userController.getUsers();
         
-        // 3. Verify the list is loaded to confirm execution
         assertNotNull(result);
-        
-        // This ensures all 19 lines are marked as "covered"
         assertEquals(19, result.size()); 
     }
 }
