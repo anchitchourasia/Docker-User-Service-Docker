@@ -9,29 +9,20 @@ jobs:
     runs-on: self-hosted
 
     env:
-      # Verified public path for Maven connectivity
       MAVEN_BIN: 'C:\maven\apache-maven-3.9.12\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\bin\mvn.cmd'
       SETTINGS_XML: 'C:\maven\settings.xml'
       JAVA_HOME: 'C:\Program Files\Java\jdk-17'
       SONAR_TOKEN: 'sqa_b77a0c65feff9e8f0bcd782da843b9dfe8d7c640'
       IMAGE_NAME: 'user-service-app'
-      # Proxy configuration for network access
       HTTP_PROXY: 'http://192.168.9.112:808'
       HTTPS_PROXY: 'http://192.168.9.112:808'
-      GIT_HTTP_PROXY: 'http://192.168.9.112:808'
-      GIT_HTTPS_PROXY: 'http://192.168.9.112:808'
+      # ← GIT_HTTP_PROXY and GIT_HTTPS_PROXY REMOVED
 
     steps:
-      # NEW: Configure git proxy before checkout
-      - name: Configure Git Proxy
-        run: |
-          git config --global http.proxy http://192.168.9.112:808
-          git config --global https.proxy http://192.168.9.112:808
-
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # This fixes the "Shallow clone detected" warning
+          fetch-depth: 0
 
       # PHASE 1: Quality Gate (Must pass before Nexus)
       - name: SonarQube Analysis
