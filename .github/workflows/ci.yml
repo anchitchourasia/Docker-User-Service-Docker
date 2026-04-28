@@ -47,6 +47,15 @@ jobs:
             -OutFile "app.war" `
             -Proxy $null
 
+      - name: Verify WAR exists
+        run: |
+          if (Test-Path "app.war") {
+            Write-Host "app.war found - size: $((Get-Item app.war).Length) bytes"
+          } else {
+            Write-Error "app.war NOT found - download failed!"
+            exit 1
+          }
+
       - name: Docker Build
         run: |
           docker build -t ${{ env.IMAGE_NAME }} .
