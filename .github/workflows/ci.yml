@@ -18,8 +18,16 @@ jobs:
       # Proxy configuration for network access
       HTTP_PROXY: 'http://192.168.9.112:808'
       HTTPS_PROXY: 'http://192.168.9.112:808'
+      GIT_HTTP_PROXY: 'http://192.168.9.112:808'
+      GIT_HTTPS_PROXY: 'http://192.168.9.112:808'
 
     steps:
+      # NEW: Configure git proxy before checkout
+      - name: Configure Git Proxy
+        run: |
+          git config --global http.proxy http://192.168.9.112:808
+          git config --global https.proxy http://192.168.9.112:808
+
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
@@ -33,13 +41,13 @@ jobs:
           "-Dsonar.host.url=http://localhost:9000" `
           "-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml" `
           "-U"
+
       # PHASE 2: Artifact Storage (Only if Phase 1 passes)
       - name: Upload to Nexus
         run: |
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" deploy -DskipTests -U
 
       # PHASE 3: Containerization
-      # trigger docker build test
       - name: Docker Build
         run: |
           docker build -t ${{ env.IMAGE_NAME }} .
