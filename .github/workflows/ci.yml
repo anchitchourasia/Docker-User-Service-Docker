@@ -16,6 +16,7 @@ jobs:
       IMAGE_NAME: 'springboot-user-service'
       HTTP_PROXY: 'http://192.168.9.112:808'
       HTTPS_PROXY: 'http://192.168.9.112:808'
+      NO_PROXY: '192.168.8.25,localhost,127.0.0.1'
 
     steps:
       - name: Checkout Code
@@ -41,8 +42,10 @@ jobs:
       # PHASE 3: Containerization
       - name: Download WAR from Nexus
         run: |
-          Invoke-WebRequest -Uri "http://192.168.8.25:8081/repository/maven-releases/com/heg/Docker-User-Service-Docker/1.0.6/Docker-User-Service-Docker-1.0.6.war" `
-          -OutFile "app.war"
+          Invoke-WebRequest `
+            -Uri "http://192.168.8.25:8081/repository/maven-releases/com/heg/Docker-User-Service-Docker/1.0.6/Docker-User-Service-Docker-1.0.6.war" `
+            -OutFile "app.war" `
+            -Proxy $null
 
       - name: Docker Build
         run: |
