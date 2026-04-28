@@ -16,7 +16,6 @@ jobs:
       IMAGE_NAME: 'springboot-user-service'
       HTTP_PROXY: 'http://192.168.9.112:808'
       HTTPS_PROXY: 'http://192.168.9.112:808'
-      # ← GIT_HTTP_PROXY and GIT_HTTPS_PROXY REMOVED
 
     steps:
       - name: Checkout Code
@@ -25,7 +24,7 @@ jobs:
           fetch-depth: 0
           clean: false
 
-      # PHASE 1: Quality Gate (Must pass before Nexus)
+      # PHASE 1: Quality Gate
       - name: SonarQube Analysis
         run: |
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify sonar:sonar `
@@ -34,17 +33,17 @@ jobs:
           "-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml" `
           "-U"
 
-      # PHASE 2: Artifact Storage (Only if Phase 1 passes) ok
+      # PHASE 2: Artifact Storage
       - name: Upload to Nexus
         run: |
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" deploy -DskipTests -U
 
       # PHASE 3: Containerization
+      - name: Download WAR from Nexus
+        run: |
+          Invoke-WebRequest -Uri "http://192.168.8.25:8081/repository/maven-releases/com/heg/Docker-User-Service-Docker/1.0.6/Docker-User-Service-Docker-1.0.6.war" `
+          -OutFile "app.war"
+
       - name: Docker Build
         run: |
           docker build -t ${{ env.IMAGE_NAME }} .
-
-      # PHASE 4: Professional Deployment
-      - name: Ansible Deployment (via WSL)
-        run: |
-          wsl -d Ubuntu bash -lc "ansible-playbook -i ~/ansible-project/inventory.ini ~/ansible-project/deploy_java_app.yml"

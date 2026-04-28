@@ -1,6 +1,5 @@
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
-# Download the specific, approved version from your Nexus
-ADD http://192.168.8.25:8081/repository/maven-releases/com/heg/Docker-User-Service-Docker/1.0.6/Docker-User-Service-Docker-1.0.6.war app.war
+COPY app.war app.war
 EXPOSE 8090
 ENTRYPOINT ["java", "-jar", "app.war"]
