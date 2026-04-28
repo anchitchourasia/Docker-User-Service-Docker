@@ -14,7 +14,7 @@
 
     <groupId>com.heg</groupId>
     <artifactId>Docker-User-Service-Docker</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.5</version>
     <name>Docker-User-Service-Docker</name>
     <description>Docker User Service with SonarQube Coverage</description>
 
