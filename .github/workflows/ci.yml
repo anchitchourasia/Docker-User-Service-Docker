@@ -23,6 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          clean: false
 
       # PHASE 1: Quality Gate (Must pass before Nexus)
       - name: SonarQube Analysis
