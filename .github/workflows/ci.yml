@@ -44,7 +44,7 @@ jobs:
         run: |
           $env:DOCKER_HOST = "npipe:////./pipe/dockerDesktopLinuxEngine"
           Invoke-WebRequest `
-            -Uri "http://192.168.8.25:8081/repository/maven-releases/com/heg/Docker-User-Service-Docker/1.0.7/Docker-User-Service-Docker-1.0.7.war" `
+            -Uri "http://192.168.8.25:8081/repository/maven-releases/com/heg/Docker-User-Service-Docker/1.0.8/Docker-User-Service-Docker-1.0.8.war" `
             -OutFile "${{ github.workspace }}\app.war" `
             -Proxy $null
           docker build -t ${{ env.IMAGE_NAME }} "${{ github.workspace }}"
