@@ -39,29 +39,13 @@ jobs:
         run: |
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" deploy -DskipTests -U
 
-      # PHASE 3: Containerization
-      - name: Download WAR from Nexus
+      # PHASE 3: Containerization — Download WAR + Build in one step
+      - name: Download WAR and Docker Build
         run: |
+          $env:DOCKER_HOST = ""
           Invoke-WebRequest `
             -Uri "http://192.168.8.25:8081/repository/maven-releases/com/heg/Docker-User-Service-Docker/1.0.6/Docker-User-Service-Docker-1.0.6.war" `
-            -OutFile "app.war" `
+            -OutFile "${{ github.workspace }}\app.war" `
             -Proxy $null
-
-      - name: Verify WAR exists
-        run: |
-          if (Test-Path "app.war") {
-            Write-Host "app.war found - size: $((Get-Item app.war).Length) bytes"
-          } else {
-            Write-Error "app.war NOT found - download failed!"
-            exit 1
-          }
-          
-      - name: Debug workspace
-        run: |
-          Write-Host "Current directory: $(Get-Location)"
-          Write-Host "Files in directory:"
-          Get-ChildItem -Name
-
-      - name: Docker Build
-        run: |
-          docker build -t ${{ env.IMAGE_NAME }} .
+          Write-Host "WAR size: $((Get-Item '${{ github.workspace }}\app.war').Length) bytes"
+          docker build -t ${{ env.IMAGE_NAME }} "${{ github.workspace }}"
