@@ -25,6 +25,21 @@
         <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
+    <!-- ============================================================ -->
+    <!-- NEXUS: tells Maven WHERE to deploy the WAR                   -->
+    <!-- The <id> here MUST match the <id> in your settings.xml       -->
+    <!-- ============================================================ -->
+    <distributionManagement>
+        <snapshotRepository>
+            <id>nexus</id>
+            <url>http://localhost:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>nexus</id>
+            <url>http://localhost:8081/repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
