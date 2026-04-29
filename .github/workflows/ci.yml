@@ -39,7 +39,7 @@ jobs:
         run: |
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" deploy -DskipTests -U
 
-      # PHASE 3: Containerization — Download WAR + Build in one step ok
+      # PHASE 3: Containerization — Download WAR + Build in one step 
       - name: Download WAR and Docker Build
         run: |
           $env:DOCKER_HOST = "npipe:////./pipe/dockerDesktopLinuxEngine"
