@@ -14,6 +14,7 @@ jobs:
       JAVA_HOME: 'C:\Program Files\Java\jdk-17'
       SONAR_TOKEN: 'sqa_b77a0c65feff9e8f0bcd782da843b9dfe8d7c640'
       IMAGE_NAME: 'springboot-user-service'
+      CONTAINER_NAME: 'springboot-user-service'
       HTTP_PROXY: 'http://192.168.9.112:808'
       HTTPS_PROXY: 'http://192.168.9.112:808'
       NO_PROXY: '192.168.8.25,localhost,127.0.0.1'
@@ -25,30 +26,46 @@ jobs:
           fetch-depth: 0
           clean: false
 
-      # PHASE 1: Quality Gate
+      # ─── PHASE 1: Quality Gate ───────────────────────────────────────
       - name: SonarQube Analysis
         run: |
+          Write-Host "=== PHASE 1: SonarQube Analysis ==="
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify sonar:sonar `
           "-Dsonar.login=${{ env.SONAR_TOKEN }}" `
           "-Dsonar.host.url=http://localhost:9000" `
           "-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml" `
           "-U"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: SonarQube analysis failed!"
+            exit 1
+          }
+          Write-Host "SonarQube analysis complete."
 
-      # PHASE 2: Artifact Storage
+      # ─── PHASE 2: Artifact Storage ───────────────────────────────────
       - name: Upload to Nexus
         run: |
+          Write-Host "=== PHASE 2: Uploading artifact to Nexus ==="
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" deploy -DskipTests -U
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Nexus deploy failed!"
+            exit 1
+          }
+          Write-Host "Nexus upload complete."
 
-      # PHASE 3: Build WAR + Docker Image
+      # ─── PHASE 3: Build WAR + Docker Image ───────────────────────────
       - name: Build WAR and Docker Image
         run: |
-          Write-Host "=== STEP 1: Building WAR ==="
+          Write-Host "=== PHASE 3: Building WAR ==="
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean package -DskipTests
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Maven build failed!"
+            exit 1
+          }
 
-          Write-Host "=== STEP 2: Checking target folder ==="
+          Write-Host "=== Checking target folder ==="
           Get-ChildItem "${{ github.workspace }}\target" | Where-Object { $_.Name -like "*.war" }
 
-          Write-Host "=== STEP 3: Copying demo.war to app.war ==="
+          Write-Host "=== Copying demo.war to app.war ==="
           if (Test-Path "${{ github.workspace }}\target\demo.war") {
             Copy-Item "${{ github.workspace }}\target\demo.war" -Destination "${{ github.workspace }}\app.war" -Force
             Write-Host "SUCCESS: app.war copied!"
@@ -57,27 +74,50 @@ jobs:
             exit 1
           }
 
-          Write-Host "=== STEP 4: Verifying app.war ==="
+          Write-Host "=== Verifying app.war ==="
           Get-ChildItem "${{ github.workspace }}\app.war"
 
-          Write-Host "=== STEP 5: Building Docker image ==="
-          docker build -t springboot-user-service "${{ github.workspace }}"
-          Write-Host "Docker image built!"
+          Write-Host "=== Building Docker image ==="
+          docker build -t "${{ env.IMAGE_NAME }}" "${{ github.workspace }}"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Docker build failed!"
+            exit 1
+          }
+          Write-Host "Docker image '${{ env.IMAGE_NAME }}' built successfully!"
 
-      # PHASE 4: Deploy Container
+      # ─── PHASE 4: Deploy Container ───────────────────────────────────
       - name: Deploy Container
         run: |
-          docker stop springboot-user-service 2>$null
-          docker rm springboot-user-service 2>$null
-          docker stop user-service 2>$null
-          docker rm user-service 2>$null
+          Write-Host "=== PHASE 4: Deploying Container ==="
 
-          docker run -d --name springboot-user-service -p 9090:8090 springboot-user-service
-          Start-Sleep -Seconds 20
+          Write-Host "--- Stopping and removing old containers ---"
+          docker stop "${{ env.CONTAINER_NAME }}" | Out-Null
+          docker rm   "${{ env.CONTAINER_NAME }}" | Out-Null
+          docker stop user-service | Out-Null
+          docker rm   user-service | Out-Null
 
+          Write-Host "--- Starting new container ---"
+          docker run -d `
+            --name "${{ env.CONTAINER_NAME }}" `
+            -p 9090:8090 `
+            --restart unless-stopped `
+            "${{ env.IMAGE_NAME }}"
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: docker run failed! Exit code: $LASTEXITCODE"
+            docker logs "${{ env.CONTAINER_NAME }}"
+            exit 1
+          }
+
+          Write-Host "Container started. Waiting 25 seconds for Spring Boot..."
+          Start-Sleep -Seconds 25
+
+          Write-Host "--- Running containers ---"
           docker ps
-          docker logs springboot-user-service
 
-          Write-Host "--------------------------------------"
-          Write-Host "App live at: http://localhost:9090/demo/users"
-          Write-Host "--------------------------------------"
+          Write-Host "--- Container logs ---"
+          docker logs "${{ env.CONTAINER_NAME }}"
+
+          Write-Host "======================================"
+          Write-Host " App live at: http://localhost:9090/demo/users"
+          Write-Host "======================================"
