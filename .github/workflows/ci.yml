@@ -7,7 +7,7 @@ on:
 jobs:
   # ─── JOB 1: Windows Runner (Phases 1-4) ──────────────────────────────
   pipeline:
-    runs-on: self-hosted
+    runs-on: [self-hosted, windows-runner]
 
     env:
       MAVEN_BIN: 'C:\maven\apache-maven-3.9.12\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\bin\mvn.cmd'
@@ -115,7 +115,7 @@ jobs:
 
   # ─── JOB 2: Ubuntu Runner (Phase 5 - Ansible) ────────────────────────
   ansible-deploy:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, ubuntu-runner]
     needs: pipeline
 
     steps:
