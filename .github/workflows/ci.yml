@@ -48,3 +48,10 @@ jobs:
             -Proxy $null
 
           docker build -t springboot-user-service "${{ github.workspace }}"
+      
+      # PHASE 4: Deploy — Stop old container and start new one
+      - name: Deploy Container
+        run: |
+          docker stop springboot-user-service 2>$null
+          docker rm springboot-user-service 2>$null
+          docker run -d --name springboot-user-service -p 8090:8080 springboot-user-service
