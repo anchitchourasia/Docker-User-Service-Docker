@@ -78,7 +78,7 @@ jobs:
           Get-ChildItem "${{ github.workspace }}\app.war"
 
           Write-Host "=== Building Docker image ==="
-          docker build -t "${{ env.IMAGE_NAME }}" "${{ github.workspace }}"
+          & docker build -t "${{ env.IMAGE_NAME }}" "${{ github.workspace }}"
           if ($LASTEXITCODE -ne 0) {
             Write-Host "ERROR: Docker build failed!"
             exit 1
@@ -91,13 +91,15 @@ jobs:
           Write-Host "=== PHASE 4: Deploying Container ==="
 
           Write-Host "--- Stopping and removing old containers ---"
-          docker stop "${{ env.CONTAINER_NAME }}" | Out-Null
-          docker rm   "${{ env.CONTAINER_NAME }}" | Out-Null
-          docker stop user-service | Out-Null
-          docker rm   user-service | Out-Null
+          $ErrorActionPreference = 'SilentlyContinue'
+          & docker stop "${{ env.CONTAINER_NAME }}" 2>&1 | Write-Host
+          & docker rm   "${{ env.CONTAINER_NAME }}" 2>&1 | Write-Host
+          & docker stop user-service                2>&1 | Write-Host
+          & docker rm   user-service                2>&1 | Write-Host
+          $ErrorActionPreference = 'Continue'
 
           Write-Host "--- Starting new container ---"
-          docker run -d `
+          & docker run -d `
             --name "${{ env.CONTAINER_NAME }}" `
             -p 9090:8090 `
             --restart unless-stopped `
@@ -105,7 +107,7 @@ jobs:
 
           if ($LASTEXITCODE -ne 0) {
             Write-Host "ERROR: docker run failed! Exit code: $LASTEXITCODE"
-            docker logs "${{ env.CONTAINER_NAME }}"
+            & docker logs "${{ env.CONTAINER_NAME }}"
             exit 1
           }
 
@@ -113,10 +115,10 @@ jobs:
           Start-Sleep -Seconds 25
 
           Write-Host "--- Running containers ---"
-          docker ps
+          & docker ps
 
           Write-Host "--- Container logs ---"
-          docker logs "${{ env.CONTAINER_NAME }}"
+          & docker logs "${{ env.CONTAINER_NAME }}"
 
           Write-Host "======================================"
           Write-Host " App live at: http://localhost:9090/demo/users"
