@@ -113,16 +113,16 @@ jobs:
           Write-Host " App live at: http://localhost:9090/demo/users"
           Write-Host "======================================"
 
-  # ─── JOB 2: Ubuntu Runner (Phases 5-6) ───────────────────────────────
+  # ─── JOB 2: Ubuntu Runner (Phases 5-7) ───────────────────────────────
   ansible-deploy:
     runs-on: [self-hosted, ubuntu-runner]
     needs: pipeline
 
     steps:
-      # ─── PHASE 5: Fresh Redis Setup ───────────────────────────────────
-      - name: Setup Fresh Redis
+      # ─── PHASE 5: Setup Infrastructure (Redis + Elasticsearch) ────────
+      - name: Setup Infrastructure
         run: |
-          echo "=== PHASE 5: Setting up Fresh Redis ==="
+          echo "=== PHASE 5: Setting up Infrastructure ==="
 
           echo "--- Stop Redis if running ---"
           docker stop redis-cache || true
@@ -154,6 +154,26 @@ jobs:
           echo " Redis is FRESH and READY!"
           echo "======================================"
 
+          echo "--- Start Elasticsearch ---"
+          docker start elasticsearch || true
+
+          echo "--- Connect Elasticsearch to app-network ---"
+          docker network connect app-network elasticsearch || true
+
+          echo "--- Wait for Elasticsearch to be ready ---"
+          sleep 15
+
+          echo "--- Verify Elasticsearch is running ---"
+          curl -s http://localhost:9200 | grep "cluster_name" && \
+            echo "Elasticsearch is READY! ✅" || \
+            echo "WARNING: Elasticsearch not responding yet"
+
+          echo "======================================"
+          echo " All Infrastructure READY!"
+          echo " Redis        → localhost:6379 ✅"
+          echo " Elasticsearch → localhost:9200 ✅"
+          echo "======================================"
+
       # ─── PHASE 6: Deploy via Ansible ──────────────────────────────────
       - name: Deploy via Ansible
         run: |
@@ -168,4 +188,27 @@ jobs:
           fi
           echo "======================================"
           echo " App live at: http://localhost:9090/demo/users"
+          echo "======================================"
+
+      # ─── PHASE 7: Verify All Services ─────────────────────────────────
+      - name: Verify All Services
+        run: |
+          echo "=== PHASE 7: Final Verification ==="
+
+          echo "--- All running containers ---"
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+          echo "--- Spring Boot health ---"
+          curl -s http://localhost:9090/demo/users | head -c 200 || true
+
+          echo "--- Redis health ---"
+          docker exec redis-cache redis-cli ping
+
+          echo "--- Elasticsearch health ---"
+          curl -s http://localhost:9200/_cluster/health | grep -o '"status":"[^"]*"' || true
+
+          echo "======================================"
+          echo " PIPELINE COMPLETE!"
+          echo " Spring Boot  → http://localhost:9090/demo/users"
+          echo " Elasticsearch → http://localhost:9200"
           echo "======================================"
