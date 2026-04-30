@@ -130,6 +130,9 @@ jobs:
           echo "--- Remove old Redis container ---"
           docker rm redis-cache || true
 
+          echo "--- Disconnect Elasticsearch from app-network first ---"
+          docker network disconnect app-network elasticsearch || true
+
           echo "--- Remove old app-network ---"
           docker network rm app-network || true
 
@@ -165,12 +168,12 @@ jobs:
 
           echo "--- Verify Elasticsearch is running ---"
           curl -s http://localhost:9200 | grep "cluster_name" && \
-            echo "Elasticsearch is READY! ✅" || \
+            echo "Elasticsearch is READY!" || \
             echo "WARNING: Elasticsearch not responding yet"
 
           echo "======================================"
           echo " All Infrastructure READY!"
-          echo " Redis        → localhost:6379 ✅"
+          echo " Redis         → localhost:6379 ✅"
           echo " Elasticsearch → localhost:9200 ✅"
           echo "======================================"
 
