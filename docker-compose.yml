@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.10
+    container_name: logstash
+    volumes:
+      - ./pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5045:5045"
+    environment:
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+    # ✅ ADDED: Hard memory limit to prevent RAM crashes
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # ✅ ADDED: Auto-restart if Logstash crashes
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
