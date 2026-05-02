@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <!-- ===================== CONSOLE APPENDER ===================== -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- ===================== ELASTICSEARCH APPENDER ===================== -->
     <appender name="ELASTICSEARCH"
-              class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
+        class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
         <url>http://172.24.204.45:9200/_bulk</url>
         <index>user-service-logs-%date{yyyy.MM.dd}</index>
         <type>_doc</type>
@@ -18,51 +16,14 @@
         <readTimeout>30000</readTimeout>
         <errorsToStderr>true</errorsToStderr>
         <includeCallerData>false</includeCallerData>
-
-        <!-- HTTP Headers -->
         <headers>
             <header>
                 <name>Content-Type</name>
                 <value>application/json</value>
             </header>
         </headers>
-
-        <!--
-            IMPORTANT: Inside <properties>, use <property> with name+value.
-            These are ES document fields, NOT Logback global variables.
-            The logback-elasticsearch-appender library handles these correctly
-            as long as the library version matches your Spring Boot version.
-        -->
-        <properties>
-            <property>
-                <name>level</name>
-                <value>%level</value>
-                <allowEmpty>false</allowEmpty>
-            </property>
-            <property>
-                <name>logger</name>
-                <value>%logger</value>
-                <allowEmpty>false</allowEmpty>
-            </property>
-            <property>
-                <name>thread</name>
-                <value>%thread</value>
-                <allowEmpty>false</allowEmpty>
-            </property>
-            <property>
-                <name>message</name>
-                <value>%message</value>
-                <allowEmpty>false</allowEmpty>
-            </property>
-            <property>
-                <name>stacktrace</name>
-                <value>%ex</value>
-                <allowEmpty>false</allowEmpty>
-            </property>
-        </properties>
     </appender>
 
-    <!-- ===================== ROOT LOGGER ===================== -->
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="ELASTICSEARCH" />
