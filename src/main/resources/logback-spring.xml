@@ -1,48 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <appender name="ELASTICSEARCH"
-        class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
-        <url>http://172.24.204.45:9200/_bulk</url>
-        <index>user-service-logs-%date{yyyy.MM.dd}</index>
-        <type>_doc</type>
+    <!-- Logstash Appender (replaces direct ES appender) -->
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>localhost:5045</destination>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Additional fields same as before -->
+            <customFields>{"app":"user-service","environment":"github-actions"}</customFields>
+        </encoder>
         <connectTimeout>30000</connectTimeout>
-        <readTimeout>30000</readTimeout>
-        <errorsToStderr>true</errorsToStderr>
-        <includeCallerData>false</includeCallerData>
-        <headers>
-            <header>
-                <name>Content-Type</name>
-                <value>application/json</value>
-            </header>
-        </headers>
-        <additionalField>
-            <key>level</key>
-            <value>%level</value>
-        </additionalField>
-        <additionalField>
-            <key>logger</key>
-            <value>%logger</value>
-        </additionalField>
-        <additionalField>
-            <key>thread</key>
-            <value>%thread</value>
-        </additionalField>
-        <additionalField>
-            <key>app</key>
-            <value>user-service</value>
-        </additionalField>
+        <reconnectionDelay>10000</reconnectionDelay>
+        <keepAliveDuration>5 minutes</keepAliveDuration>
     </appender>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
-        <appender-ref ref="ELASTICSEARCH" />
+        <appender-ref ref="LOGSTASH" />
     </root>
 
 </configuration>
