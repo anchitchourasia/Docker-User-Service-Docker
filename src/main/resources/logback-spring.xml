@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <!-- CONSOLE appender - always active -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- Elasticsearch direct appender - sends logs to ES port 9200 -->
     <appender name="ELASTICSEARCH"
         class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
         <url>http://elasticsearch:9200/_bulk</url>
@@ -18,23 +16,6 @@
         <readTimeout>30000</readTimeout>
         <errorsToStderr>false</errorsToStderr>
         <includeCallerData>false</includeCallerData>
-        <properties>
-            <property>
-                <name>level</name>
-                <value>%level</value>
-                <allowEmpty>false</allowEmpty>
-            </property>
-            <property>
-                <name>logger</name>
-                <value>%logger</value>
-                <allowEmpty>false</allowEmpty>
-            </property>
-            <property>
-                <name>thread</name>
-                <value>%thread</value>
-                <allowEmpty>false</allowEmpty>
-            </property>
-        </properties>
     </appender>
 
     <root level="INFO">
