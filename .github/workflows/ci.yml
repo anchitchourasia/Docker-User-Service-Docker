@@ -124,7 +124,7 @@ jobs:
     needs: pipeline
 
     steps:
-      # ─── PHASE 5: Setup Infrastructure (Redis + Elasticsearch) ────────
+      # ─── PHASE 5: Setup Infrastructure ────────────────────────────────
       - name: Setup Infrastructure
         run: |
           echo "=== PHASE 5: Setting up Infrastructure ==="
@@ -133,26 +133,28 @@ jobs:
           echo " STEP 1: Cleaning up old containers"
           echo "======================================"
 
-          echo "--- Stop Redis if running ---"
+          echo "--- Stop and remove Redis ---"
           docker stop redis-cache || true
-
-          echo "--- Remove old Redis container ---"
           docker rm redis-cache || true
 
-          echo "--- Stop Elasticsearch if running ---"
+          echo "--- Stop and remove Elasticsearch ---"
           docker stop elasticsearch || true
-
-          echo "--- Remove old Elasticsearch container ---"
           docker rm elasticsearch || true
+
+          echo "--- Stop and remove Kibana ---"
+          docker stop kibana || true
+          docker rm kibana || true
 
           echo "======================================"
           echo " STEP 2: Rebuilding Network"
           echo "======================================"
 
-          echo "--- Disconnect ALL containers from app-network first ---"
+          echo "--- Disconnect ALL containers from all networks ---"
+          docker network disconnect app-network kibana || true
           docker network disconnect app-network springboot-user-service || true
           docker network disconnect app-network redis-cache || true
           docker network disconnect app-network elasticsearch || true
+          docker network disconnect user-app-network kibana || true
 
           echo "--- Remove old app-network ---"
           docker network rm app-network || true
@@ -197,12 +199,32 @@ jobs:
             echo "WARNING: Elasticsearch not responding yet"
 
           echo "======================================"
+          echo " STEP 5: Starting Kibana (Fresh)"
+          echo "======================================"
+
+          docker run -d \
+            --name kibana \
+            --network app-network \
+            -p 5601:5601 \
+            -e "ELASTICSEARCH_HOSTS=http://elasticsearch:9200" \
+            --restart unless-stopped \
+            kibana:7.17.10
+
+          echo "--- Wait 30 seconds for Kibana to boot ---"
+          sleep 30
+
+          curl -s http://localhost:5601/api/status | grep -o '"level":"[^"]*"' | head -1 && \
+            echo "Kibana is READY! ✅" || \
+            echo "WARNING: Kibana still booting..."
+
+          echo "======================================"
           echo " All Infrastructure FRESH and READY!"
           echo " Redis         → localhost:6379 ✅"
           echo " Elasticsearch → localhost:9200 ✅"
+          echo " Kibana        → localhost:5601 ✅"
           echo "======================================"
 
-      # ─── PHASE 6: Deploy via Ansible ──────────────────────────────────-
+      # ─── PHASE 6: Deploy via Ansible ──────────────────────────────────
       - name: Deploy via Ansible
         run: |
           echo "=== PHASE 6: Deploying via Ansible ==="
@@ -235,8 +257,12 @@ jobs:
           echo "--- Elasticsearch health ---"
           curl -s http://localhost:9200/_cluster/health | grep -o '"status":"[^"]*"' || true
 
+          echo "--- Kibana health ---"
+          curl -s http://localhost:5601/api/status | grep -o '"level":"[^"]*"' | head -1 || true
+
           echo "======================================"
           echo " PIPELINE COMPLETE!"
-          echo " Spring Boot  → http://localhost:9090/demo/users"
+          echo " Spring Boot   → http://localhost:9090/demo/users"
           echo " Elasticsearch → http://localhost:9200"
+          echo " Kibana        → http://172.24.204.45:5601"
           echo "======================================"
