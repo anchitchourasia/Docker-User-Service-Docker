@@ -9,7 +9,7 @@
 
     <appender name="ELASTICSEARCH"
         class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
-        <url>http://elasticsearch:9200/_bulk</url>
+        <url>http://172.24.204.45:9200/_bulk</url>
         <index>user-service-logs-%date{yyyy.MM.dd}</index>
         <type>_doc</type>
         <connectTimeout>30000</connectTimeout>
