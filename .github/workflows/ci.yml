@@ -197,7 +197,7 @@ jobs:
           echo " Elasticsearch → localhost:9200 ✅"
           echo "======================================"
 
-      # ─── PHASE 6: Deploy via Ansible ──────────────────────────────────
+      # ─── PHASE 6: Deploy via Ansible ──────────────────────────────────-
       - name: Deploy via Ansible
         run: |
           echo "=== PHASE 6: Deploying via Ansible ==="
