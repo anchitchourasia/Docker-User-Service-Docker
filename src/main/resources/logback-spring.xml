@@ -14,8 +14,35 @@
         <type>_doc</type>
         <connectTimeout>30000</connectTimeout>
         <readTimeout>30000</readTimeout>
-        <errorsToStderr>false</errorsToStderr>
+        <errorsToStderr>true</errorsToStderr>
         <includeCallerData>false</includeCallerData>
+        <properties>
+            <property>
+                <name>level</name>
+                <value>%level</value>
+                <allowEmpty>false</allowEmpty>
+            </property>
+            <property>
+                <name>logger</name>
+                <value>%logger</value>
+                <allowEmpty>false</allowEmpty>
+            </property>
+            <property>
+                <name>message</name>
+                <value>%message</value>
+                <allowEmpty>false</allowEmpty>
+            </property>
+            <property>
+                <name>thread</name>
+                <value>%thread</value>
+                <allowEmpty>false</allowEmpty>
+            </property>
+            <property>
+                <name>stacktrace</name>
+                <value>%ex</value>
+                <allowEmpty>true</allowEmpty>
+            </property>
+        </properties>
     </appender>
 
     <root level="INFO">
