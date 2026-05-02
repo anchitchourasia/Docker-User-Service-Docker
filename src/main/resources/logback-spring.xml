@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <!-- Console: human-readable -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
+    <!-- Elasticsearch: structured JSON via TCP/Logstash -->
     <appender name="ELASTICSEARCH"
         class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
         <url>http://172.24.204.45:9200/_bulk</url>
@@ -22,6 +24,10 @@
                 <value>application/json</value>
             </header>
         </headers>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeContext>false</includeContext>
+            <customFields>{"app":"user-service","env":"docker"}</customFields>
+        </encoder>
     </appender>
 
     <root level="INFO">
