@@ -146,6 +146,11 @@ jobs:
 
 
     steps:
+      # ─── CHECKOUT (needed for logstash.conf) ──────────────────────────
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+
       # ─── PHASE 5: Setup Infrastructure ────────────────────────────────
       - name: Setup Infrastructure
         run: |
@@ -263,16 +268,12 @@ jobs:
             echo "WARNING: Kibana still booting..."
 
 
-                    echo "======================================"
+          echo "======================================"
           echo " STEP 6: Starting Logstash (Fresh)"
           echo "======================================"
 
-          docker stop logstash || true
-          docker rm logstash || true
-
-          # Copy logstash.conf to a clean Linux path first (avoids WSL2 mount issues)
           mkdir -p /tmp/logstash-pipeline
-          cp /home/anchit/actions-runner/_work/Docker-User-Service-Docker/Docker-User-Service-Docker/logstash.conf /tmp/logstash-pipeline/logstash.conf
+          cp $GITHUB_WORKSPACE/logstash.conf /tmp/logstash-pipeline/logstash.conf
 
           docker run -d \
             --name logstash \
