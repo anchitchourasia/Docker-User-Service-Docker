@@ -1,16 +1,13 @@
 name: End-to-End User Service Pipeline
 
-
 on:
   push:
     branches: [ "main" ]
 
-
 jobs:
-  # ─── JOB 1: Windows Runner (Phases 1-4) ─────────────────────────────
+  # ─── JOB 1: Windows Runner (Phases 1-4) ──────────────────────────────
   pipeline:
     runs-on: [self-hosted, windows-runner]
-
 
     env:
       MAVEN_BIN: 'C:\maven\apache-maven-3.9.12\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\bin\mvn.cmd'
@@ -23,14 +20,12 @@ jobs:
       HTTPS_PROXY: 'http://192.168.9.112:808'
       NO_PROXY: '192.168.8.25,localhost,127.0.0.1'
 
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           clean: false
-
 
       # ─── PHASE 1: Quality Gate ───────────────────────────────────────
       - name: SonarQube Analysis
@@ -45,7 +40,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: SonarQube Quality Gate FAILED!"; exit 1 }
           Write-Host "SonarQube Quality Gate PASSED!"
 
-
       # ─── PHASE 2: Artifact Storage ───────────────────────────────────
       - name: Upload to Nexus
         run: |
@@ -54,7 +48,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: Nexus deploy failed!"; exit 1 }
           Write-Host "Nexus upload complete."
 
-
       # ─── PHASE 3: Build WAR + Docker Image ───────────────────────────
       - name: Build WAR and Docker Image
         run: |
@@ -62,10 +55,8 @@ jobs:
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean package -DskipTests
           if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: Maven build failed!"; exit 1 }
 
-
           Write-Host "=== Checking target folder ==="
           Get-ChildItem "${{ github.workspace }}\target" | Where-Object { $_.Name -like "*.war" }
-
 
           Write-Host "=== Copying demo.war to app.war ==="
           if (Test-Path "${{ github.workspace }}\target\demo.war") {
@@ -76,22 +67,18 @@ jobs:
             exit 1
           }
 
-
           Write-Host "=== Verifying app.war ==="
           Get-ChildItem "${{ github.workspace }}\app.war"
-
 
           Write-Host "=== Building Docker image ==="
           cmd /c "docker build -t ${{ env.IMAGE_NAME }} ${{ github.workspace }}"
           if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: Docker build failed!"; exit 1 }
           Write-Host "Docker image built successfully!"
 
-
       # ─── PHASE 4: Deploy Container ───────────────────────────────────
       - name: Deploy Container
         run: |
           Write-Host "=== PHASE 4: Deploying Container ==="
-
 
           Write-Host "--- Checking docker availability ---"
           $dockerPath = (Get-Command docker -ErrorAction SilentlyContinue).Source
@@ -103,17 +90,14 @@ jobs:
           Write-Host "Docker found at: $dockerPath"
           cmd /c "docker --version"
 
-
           Write-Host "--- Stopping and removing old containers ---"
           cmd /c "docker stop ${{ env.CONTAINER_NAME }}"
           cmd /c "docker rm ${{ env.CONTAINER_NAME }}"
           cmd /c "docker stop user-service"
           cmd /c "docker rm user-service"
 
-
           Write-Host "--- Starting new container ---"
           cmd /c "docker run -d --name ${{ env.CONTAINER_NAME }} -p 9090:8090 --restart unless-stopped ${{ env.IMAGE_NAME }}"
-
 
           if ($LASTEXITCODE -ne 0) {
             Write-Host "ERROR: docker run failed! Exit code: $LASTEXITCODE"
@@ -121,43 +105,36 @@ jobs:
             exit 1
           }
 
-
           Write-Host "Container started. Waiting 25 seconds for Spring Boot..."
           Start-Sleep -Seconds 25
-
 
           Write-Host "--- Running containers ---"
           cmd /c "docker ps"
 
-
           Write-Host "--- Container logs ---"
           cmd /c "docker logs ${{ env.CONTAINER_NAME }}"
-
 
           Write-Host "======================================"
           Write-Host " App live at: http://localhost:9090/demo/users"
           Write-Host "======================================"
-
 
   # ─── JOB 2: Ubuntu Runner (Phases 5-7) ───────────────────────────────
   ansible-deploy:
     runs-on: [self-hosted, ubuntu-runner]
     needs: pipeline
 
-
     steps:
       # ─── CHECKOUT (needed for logstash.conf) ──────────────────────────
       - name: Checkout Code
         uses: actions/checkout@v4
 
-
       # ─── PHASE 5: Setup Infrastructure ────────────────────────────────
-            - name: Setup Infrastructure
+      - name: Setup Infrastructure
         run: |
           echo "=== PHASE 5: Setting up Infrastructure ==="
 
           echo "======================================"
-          echo " STEP 1: Cleaning up only Logstash & Redis"
+          echo " STEP 1: Cleaning up only Logstash and Redis"
           echo "======================================"
 
           echo "--- Stop and remove Logstash ---"
@@ -195,7 +172,7 @@ jobs:
           echo "======================================"
 
           if [ "$(docker ps -q -f name=elasticsearch)" ]; then
-            echo "Elasticsearch already running ✅ - skipping"
+            echo "Elasticsearch already running - skipping"
             docker network connect app-network elasticsearch || true
           else
             echo "Starting Elasticsearch..."
@@ -214,7 +191,7 @@ jobs:
           fi
 
           curl -s http://localhost:9200/_cluster/health | grep "cluster_name" && \
-            echo "Elasticsearch is READY! ✅" || \
+            echo "Elasticsearch is READY!" || \
             echo "WARNING: Elasticsearch not responding yet"
 
           echo "======================================"
@@ -222,7 +199,7 @@ jobs:
           echo "======================================"
 
           if [ "$(docker ps -q -f name=kibana)" ]; then
-            echo "Kibana already running ✅ - skipping (your dashboards are safe!)"
+            echo "Kibana already running - skipping, dashboards are safe!"
             docker network connect app-network kibana || true
           else
             echo "Starting Kibana..."
@@ -239,7 +216,7 @@ jobs:
           fi
 
           curl -s http://localhost:5601/api/status | grep -o '"level":"[^"]*"' | head -1 && \
-            echo "Kibana is READY! ✅" || \
+            echo "Kibana is READY!" || \
             echo "WARNING: Kibana still booting..."
 
           echo "======================================"
@@ -261,12 +238,64 @@ jobs:
           sleep 40
 
           docker logs logstash --tail 5 || true
-          echo "Logstash is READY! ✅"
+          echo "Logstash is READY!"
 
           echo "======================================"
           echo " All Infrastructure READY!"
-          echo " Redis         → localhost:6379 ✅"
-          echo " Elasticsearch → localhost:9200 ✅"
-          echo " Kibana        → localhost:5601 ✅ (dashboards preserved!)"
-          echo " Logstash      → localhost:5045 ✅"
+          echo " Redis         -> localhost:6379"
+          echo " Elasticsearch -> localhost:9200"
+          echo " Kibana        -> localhost:5601 (dashboards preserved!)"
+          echo " Logstash      -> localhost:5045"
+          echo "======================================"
+
+      # ─── PHASE 6: Deploy via Ansible ──────────────────────────────────
+      - name: Deploy via Ansible
+        run: |
+          echo "=== PHASE 6: Deploying via Ansible ==="
+          export PATH=$PATH:/home/anchit/.local/bin
+          ansible-playbook \
+            -i /home/anchit/github-actions-ansible/inventory.yml \
+            /home/anchit/github-actions-ansible/deploy-playbook.yml
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Ansible deploy failed!"
+            exit 1
+          fi
+
+          echo "--- Connecting springboot-user-service to app-network ---"
+          docker network connect app-network springboot-user-service || true
+          echo "springboot-user-service connected to app-network"
+
+          echo "======================================"
+          echo " App live at: http://localhost:9090/demo/users"
+          echo "======================================"
+
+      # ─── PHASE 7: Verify All Services ─────────────────────────────────
+      - name: Verify All Services
+        run: |
+          echo "=== PHASE 7: Final Verification ==="
+
+          echo "--- All running containers ---"
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+          echo "--- Spring Boot health ---"
+          curl -s http://localhost:9090/demo/users | head -c 200 || true
+
+          echo "--- Redis health ---"
+          docker exec redis-cache redis-cli ping
+
+          echo "--- Elasticsearch health ---"
+          curl -s http://localhost:9200/_cluster/health | grep -o '"status":"[^"]*"' || true
+
+          echo "--- Kibana health ---"
+          curl -s http://localhost:5601/api/status | grep -o '"level":"[^"]*"' | head -1 || true
+
+          echo "--- Logstash health ---"
+          docker logs logstash --tail 5 || true
+
+          echo "======================================"
+          echo " PIPELINE COMPLETE!"
+          echo " Spring Boot   -> http://localhost:9090/demo/users"
+          echo " Elasticsearch -> http://localhost:9200"
+          echo " Kibana        -> http://172.24.204.45:5601"
+          echo " Logstash      -> localhost:5045"
           echo "======================================"
