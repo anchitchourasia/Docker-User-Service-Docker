@@ -223,17 +223,21 @@ jobs:
           echo " STEP 6: Starting Logstash (Fresh)"
           echo "======================================"
 
+          # Remove existing folder/file to avoid "is a directory" confusion
+          rm -rf /tmp/logstash-pipeline
           mkdir -p /tmp/logstash-pipeline
-          cp $GITHUB_WORKSPACE/logstash.conf /tmp/logstash-pipeline/logstash.conf
+          
+          # Copy source file to destination FILE
+          cp "$GITHUB_WORKSPACE/logstash.conf" "/tmp/logstash-pipeline/logstash.conf"
 
           docker run -d \
             --name logstash \
             --network app-network \
             -p 5045:5045 \
-            -v /tmp/logstash-pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf \
+            -v "/tmp/logstash-pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf" \
             --restart unless-stopped \
             logstash:7.17.10
-
+            
           echo "--- Wait 40 seconds for Logstash to boot ---"
           sleep 40
 
