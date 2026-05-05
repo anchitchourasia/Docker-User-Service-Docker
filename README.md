@@ -4,7 +4,7 @@
 
 <!-- 📸 IMAGE PLACEHOLDER 1 -->
 <!-- Add your CI/CD pipeline architecture diagram image here -->
-<!-- Suggested: The pipeline workflow diagram you generated showing all 6 stages -->
+<!-- Suggested: The pipeline workflow diagram you generated showing all 6 stages  -->
 ![Pipeline Architecture](docs/pipeline-architecture.png)
 
 ---
