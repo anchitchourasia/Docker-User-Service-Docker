@@ -3,7 +3,7 @@
 > A fully automated DevOps pipeline for a Spring Boot User Service — from code push to live deployment with real-time log monitoring via the ELK Stack.
 
 <!-- 📸 IMAGE PLACEHOLDER 1 -->
-<!-- Add your CI/CD pipeline architecture diagram image here -->
+<!-- Add your CI/CD pipeline architecture diagram image here  -->
 <!-- Suggested: The pipeline workflow diagram you generated showing all 6 stages -->
 ![Pipeline Architecture](docs/pipeline-architecture.png)
 
