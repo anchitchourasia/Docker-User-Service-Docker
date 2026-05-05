@@ -122,7 +122,10 @@ jobs:
   ansible-deploy:
     runs-on: [self-hosted, ubuntu-runner]
     needs: pipeline
-
+    env:
+      http_proxy: http://192.168.9.112:808
+      https_proxy: http://192.168.9.112:808
+      no_proxy: 192.168.8.25,localhost,127.0.0.1
     steps:
       # ─── CHECKOUT (needed for logstash.conf) ──────────────────────────
       - name: Checkout Code
@@ -237,7 +240,7 @@ jobs:
             -v "/tmp/logstash-pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf" \
             --restart unless-stopped \
             logstash:7.17.10
-            
+
           echo "--- Wait 40 seconds for Logstash to boot ---"
           sleep 40
 
