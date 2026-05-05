@@ -202,10 +202,10 @@ jobs:
             echo "Kibana is READY!" || \
             echo "WARNING: Kibana still booting..."
 
-          echo "======================================"
+           echo "======================================"
           echo " STEP 5: Starting Logstash (Fresh)"
           echo "======================================"
-          rm -rf /tmp/logstash-pipeline
+          sudo rm -rf /tmp/logstash-pipeline
           mkdir -p /tmp/logstash-pipeline
           cp "$GITHUB_WORKSPACE/logstash.conf" "/tmp/logstash-pipeline/logstash.conf"
 
