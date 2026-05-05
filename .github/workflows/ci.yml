@@ -80,35 +80,17 @@ jobs:
         run: |
           Write-Host "=== PHASE 4: Deploying Container ==="
 
-          Write-Host "=== STEP 1: Ensure win-app-network exists ==="
-          cmd /c "docker network inspect win-app-network"
-          if ($LASTEXITCODE -ne 0) {
-            cmd /c "docker network create win-app-network"
-            Write-Host "win-app-network created!"
-          } else {
-            Write-Host "win-app-network already exists!"
-          }
-
-          Write-Host "=== STEP 2: Start Redis on Windows (same machine as Spring Boot) ==="
-          cmd /c "docker stop redis-cache"
-          cmd /c "docker rm redis-cache"
-          cmd /c "docker run -d --name redis-cache --network win-app-network -p 6379:6379 --restart unless-stopped redis:alpine"
-          Write-Host "Waiting 5 seconds for Redis..."
-          Start-Sleep -Seconds 5
-          cmd /c "docker exec redis-cache redis-cli ping"
-          Write-Host "Redis is READY on Windows!"
-
-          Write-Host "=== STEP 3: Stop and remove old Spring Boot containers ==="
+          Write-Host "--- Stopping and removing old containers ---"
           cmd /c "docker stop ${{ env.CONTAINER_NAME }}"
           cmd /c "docker rm ${{ env.CONTAINER_NAME }}"
           cmd /c "docker stop user-service"
           cmd /c "docker rm user-service"
 
-          Write-Host "=== STEP 4: Start Spring Boot on SAME network as Redis ==="
-          cmd /c "docker run -d --name ${{ env.CONTAINER_NAME }} --network win-app-network -p 9090:8090 --restart unless-stopped ${{ env.IMAGE_NAME }}"
+          Write-Host "--- Starting new container ---"
+          cmd /c "docker run -d --name ${{ env.CONTAINER_NAME }} -p 9090:8090 --restart unless-stopped ${{ env.IMAGE_NAME }}"
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "ERROR: docker run failed! Exit code: $LASTEXITCODE"
+            Write-Host "ERROR: docker run failed!"
             cmd /c "docker logs ${{ env.CONTAINER_NAME }}"
             exit 1
           }
