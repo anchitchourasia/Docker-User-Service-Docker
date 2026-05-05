@@ -80,24 +80,32 @@ jobs:
         run: |
           Write-Host "=== PHASE 4: Deploying Container ==="
 
-          Write-Host "--- Checking docker availability ---"
-          $dockerPath = (Get-Command docker -ErrorAction SilentlyContinue).Source
-          if (-not $dockerPath) {
-            Write-Host "ERROR: docker not found in PATH!"
-            Write-Host "PATH = $env:PATH"
-            exit 1
+          Write-Host "=== STEP 1: Ensure win-app-network exists ==="
+          cmd /c "docker network inspect win-app-network"
+          if ($LASTEXITCODE -ne 0) {
+            cmd /c "docker network create win-app-network"
+            Write-Host "win-app-network created!"
+          } else {
+            Write-Host "win-app-network already exists!"
           }
-          Write-Host "Docker found at: $dockerPath"
-          cmd /c "docker --version"
 
-          Write-Host "--- Stopping and removing old containers ---"
+          Write-Host "=== STEP 2: Start Redis on Windows (same machine as Spring Boot) ==="
+          cmd /c "docker stop redis-cache"
+          cmd /c "docker rm redis-cache"
+          cmd /c "docker run -d --name redis-cache --network win-app-network -p 6379:6379 --restart unless-stopped redis:alpine"
+          Write-Host "Waiting 5 seconds for Redis..."
+          Start-Sleep -Seconds 5
+          cmd /c "docker exec redis-cache redis-cli ping"
+          Write-Host "Redis is READY on Windows!"
+
+          Write-Host "=== STEP 3: Stop and remove old Spring Boot containers ==="
           cmd /c "docker stop ${{ env.CONTAINER_NAME }}"
           cmd /c "docker rm ${{ env.CONTAINER_NAME }}"
           cmd /c "docker stop user-service"
           cmd /c "docker rm user-service"
 
-          Write-Host "--- Starting new container ---"
-          cmd /c "docker run -d --name ${{ env.CONTAINER_NAME }} -p 9090:8090 --restart unless-stopped ${{ env.IMAGE_NAME }}"
+          Write-Host "=== STEP 4: Start Spring Boot on SAME network as Redis ==="
+          cmd /c "docker run -d --name ${{ env.CONTAINER_NAME }} --network win-app-network -p 9090:8090 --restart unless-stopped ${{ env.IMAGE_NAME }}"
 
           if ($LASTEXITCODE -ne 0) {
             Write-Host "ERROR: docker run failed! Exit code: $LASTEXITCODE"
@@ -122,12 +130,8 @@ jobs:
   ansible-deploy:
     runs-on: [self-hosted, ubuntu-runner]
     needs: pipeline
-    env:
-      http_proxy: http://192.168.9.112:808
-      https_proxy: http://192.168.9.112:808
-      no_proxy: 192.168.8.25,localhost,127.0.0.1
+
     steps:
-      # ─── CHECKOUT (needed for logstash.conf) ──────────────────────────
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -137,43 +141,20 @@ jobs:
           echo "=== PHASE 5: Setting up Infrastructure ==="
 
           echo "======================================"
-          echo " STEP 1: Cleaning up only Logstash and Redis"
+          echo " STEP 1: Cleaning up Logstash only"
           echo "======================================"
-
-          echo "--- Stop and remove Logstash ---"
           docker stop logstash || true
           docker rm logstash || true
-
-          echo "--- Stop and remove Redis ---"
-          docker stop redis-cache || true
-          docker rm redis-cache || true
 
           echo "======================================"
           echo " STEP 2: Ensure app-network exists"
           echo "======================================"
-
           docker network inspect app-network > /dev/null 2>&1 || docker network create app-network
-          echo "app-network ready ✅"
+          echo "app-network ready"
 
           echo "======================================"
-          echo " STEP 3: Starting Redis (Fresh)"
+          echo " STEP 3: Elasticsearch - Start if not running"
           echo "======================================"
-
-          docker run -d \
-            --name redis-cache \
-            --network app-network \
-            -p 6379:6379 \
-            --restart unless-stopped \
-            redis:alpine
-
-          sleep 3
-          docker exec redis-cache redis-cli ping
-          echo "Redis is FRESH and READY! ✅"
-
-          echo "======================================"
-          echo " STEP 4: Elasticsearch - Start if not running"
-          echo "======================================"
-
           if [ "$(docker ps -q -f name=elasticsearch)" ]; then
             echo "Elasticsearch already running - skipping"
             docker network connect app-network elasticsearch || true
@@ -198,9 +179,8 @@ jobs:
             echo "WARNING: Elasticsearch not responding yet"
 
           echo "======================================"
-          echo " STEP 5: Kibana - Start if not running"
+          echo " STEP 4: Kibana - Start if not running"
           echo "======================================"
-
           if [ "$(docker ps -q -f name=kibana)" ]; then
             echo "Kibana already running - skipping, dashboards are safe!"
             docker network connect app-network kibana || true
@@ -223,14 +203,10 @@ jobs:
             echo "WARNING: Kibana still booting..."
 
           echo "======================================"
-          echo " STEP 6: Starting Logstash (Fresh)"
+          echo " STEP 5: Starting Logstash (Fresh)"
           echo "======================================"
-
-          # Remove existing folder/file to avoid "is a directory" confusion
           rm -rf /tmp/logstash-pipeline
           mkdir -p /tmp/logstash-pipeline
-          
-          # Copy source file to destination FILE
           cp "$GITHUB_WORKSPACE/logstash.conf" "/tmp/logstash-pipeline/logstash.conf"
 
           docker run -d \
@@ -243,15 +219,13 @@ jobs:
 
           echo "--- Wait 40 seconds for Logstash to boot ---"
           sleep 40
-
           docker logs logstash --tail 5 || true
           echo "Logstash is READY!"
 
           echo "======================================"
           echo " All Infrastructure READY!"
-          echo " Redis         -> localhost:6379"
           echo " Elasticsearch -> localhost:9200"
-          echo " Kibana        -> localhost:5601 (dashboards preserved!)"
+          echo " Kibana        -> localhost:5601"
           echo " Logstash      -> localhost:5045"
           echo "======================================"
 
@@ -287,9 +261,6 @@ jobs:
           echo "--- Spring Boot health ---"
           curl -s http://localhost:9090/demo/users | head -c 200 || true
 
-          echo "--- Redis health ---"
-          docker exec redis-cache redis-cli ping
-
           echo "--- Elasticsearch health ---"
           curl -s http://localhost:9200/_cluster/health | grep -o '"status":"[^"]*"' || true
 
@@ -305,4 +276,4 @@ jobs:
           echo " Elasticsearch -> http://localhost:9200"
           echo " Kibana        -> http://172.24.204.45:5601"
           echo " Logstash      -> localhost:5045"
-          echo "======================================"
+          echo "======================================" 
