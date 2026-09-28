@@ -13,11 +13,11 @@ jobs:
       MAVEN_BIN: 'C:\maven\apache-maven-3.9.12\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\bin\mvn.cmd'
       SETTINGS_XML: 'C:\maven\settings.xml'
       JAVA_HOME: 'C:\Program Files\Java\jdk-17'
-      SONAR_TOKEN: 'sqa_b77a0c65feff9e8f0bcd782da843b9dfe8d7c640'
-      IMAGE_NAME: 'springboot-user-service'
-      CONTAINER_NAME: 'springboot-user-service'
-      HTTP_PROXY: 'http://192.168.9.112:808'
-      HTTPS_PROXY: 'http://192.168.9.112:808'
+      SONAR_TOKEN: 'sqa_d1af91b1740e79033a103e43fc1143d7822aedf1'
+      IMAGE_NAME: 'springboot-user-service1'
+      CONTAINER_NAME: 'springboot-user-service1'
+      HTTP_PROXY: 'http://anchit:Lnjb%401234@192.168.9.112:808'
+      HTTPS_PROXY: 'http://anchit:Lnjb%401234@192.168.9.112:808'
       NO_PROXY: '192.168.8.25,localhost,127.0.0.1'
 
     steps:
