@@ -13,11 +13,11 @@ jobs:
       MAVEN_BIN: 'C:\maven\apache-maven-3.9.12\59fe215c0ad6947fea90184bf7add084544567b927287592651fda3782e0e798\bin\mvn.cmd'
       SETTINGS_XML: 'C:\maven\settings.xml'
       JAVA_HOME: 'C:\Program Files\Java\jdk-17'
-      SONAR_TOKEN: 'sqa_d1af91b1740e79033a103e43fc1143d7822aedf1'
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       IMAGE_NAME: 'springboot-user-service1'
       CONTAINER_NAME: 'springboot-user-service1'
-      HTTP_PROXY: 'http://anchit:Lnjb%401234@192.168.9.112:808'
-      HTTPS_PROXY: 'http://anchit:Lnjb%401234@192.168.9.112:808'
+      HTTP_PROXY: 'http://192.168.9.112:808'
+      HTTPS_PROXY: 'http://192.168.9.112:808'
       NO_PROXY: '192.168.8.25,localhost,127.0.0.1'
 
     steps:
@@ -31,8 +31,8 @@ jobs:
       - name: SonarQube Analysis
         run: |
           Write-Host "=== PHASE 1: SonarQube Analysis ==="
-          & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify sonar:sonar `
-            "-Dsonar.login=${{ env.SONAR_TOKEN }}" `
+          & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar `
+            "-Dsonar.token=${{ env.SONAR_TOKEN }}" `
             "-Dsonar.host.url=http://localhost:9000" `
             "-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml" `
             "-Dsonar.qualitygate.wait=true" `
