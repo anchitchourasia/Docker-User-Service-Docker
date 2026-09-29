@@ -34,6 +34,8 @@ jobs:
           & "${{ env.MAVEN_BIN }}" -s "${{ env.SETTINGS_XML }}" clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar `
             "-Dsonar.token=${{ env.SONAR_TOKEN }}" `
             "-Dsonar.host.url=http://localhost:9000" `
+            "-Dsonar.projectKey=docker-user-service-github-actions" `
+            "-Dsonar.projectName=Docker User Service - GitHub Actions" `
             "-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml" `
             "-Dsonar.qualitygate.wait=true" `
             "-U"
